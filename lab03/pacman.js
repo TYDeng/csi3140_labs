@@ -7,15 +7,16 @@ let levelcomplete = false;
 let pacmanIndex = -99;
 let ghostIndex = -99;
 let score = 0;
+let intervalID;
 
-//Generate a random  int in range n (number n exclusive)
+// Generate a random int in range n (number n exclusive)
 function getRandomInt(min, max){
     return Math.floor(Math.random()*(max - min)) + min;
 }
 
 function createGame(elements){
     if(elements < 5){
-        console.error("At least 5 element is acceptable");
+        console.error("At least 5 elements are required");
         return null;
     }
     game = new Array(elements).fill(".");
@@ -27,9 +28,9 @@ function createGame(elements){
         }
     }
 
-    //[0] for "C", [1] for "^", [2] for fruit
-    let pacmanIndex = specialPos[0]
-    let ghostIndex = specialPos[1]
+    // [0] for "C", [1] for "^", [2] for fruit
+    pacmanIndex = specialPos[0];
+    ghostIndex = specialPos[1];
     game[specialPos[2]] = "@";
 
     level = 0;
@@ -42,19 +43,26 @@ function createGame(elements){
     game[pacmanIndex] = "C";
     game[ghostIndex] = "^";
 
-    return game
-} 
+    return game;
+}
 
 function moveLeft(game) {
-    if (pacmanIndex != -99) {
-        if (pacmanIndex == 0){// reach the boundary limit (index 0)
+    if (pacmanIndex !== -99) {
+        if (pacmanIndex == 0){ // reach the boundary limit (index 0)
             game[pacmanIndex] = " "; // set index 0 pellet as empty
-            pacmanIndex = game.length;// taken pac index as max +1
+            pacmanIndex = game.length; // set pacman index to max +1
         }
         if (game[pacmanIndex - 1] === ".") {
             score += 1;
         }
-        if (pacmanIndex != game.length)
+        if (game[pacmanIndex - 1] === "@") {
+            score += 5;
+            fruitEat = true;
+        }
+        if (game[pacmanIndex - 1] === "^" && !fruitEat) {
+            gameOver = true;
+        }
+        if (pacmanIndex !== game.length)
             game[pacmanIndex] = " ";
         pacmanIndex--;
         game[pacmanIndex] = "C";
@@ -63,15 +71,22 @@ function moveLeft(game) {
 }
 
 function moveRight(game) {
-    if (pacmanIndex != -99) {
-        if (pacmanIndex == game.length -1){// reach the boundary limit (index 0)
-            game[pacmanIndex] = " "; // set index 0 pellet as empty
-            pacmanIndex = -1;// taken pac index as max +1
+    if (pacmanIndex !== -99) {
+        if (pacmanIndex == game.length - 1){ // reach the boundary limit (last index)
+            game[pacmanIndex] = " "; // set last index pellet as empty
+            pacmanIndex = -1; // set pacman index to -1
         }
         if (game[pacmanIndex + 1] === ".") {
             score += 1; 
         }
-        if (pacmanIndex != -1)
+        if (game[pacmanIndex + 1] === "@") {
+            score += 5;
+            fruitEat = true;
+        }
+        if (game[pacmanIndex + 1] === "^" && !fruitEat) {
+            gameOver = true;
+        }
+        if (pacmanIndex !== -1)
             game[pacmanIndex] = " ";
         pacmanIndex++;
         game[pacmanIndex] = "C";
@@ -97,7 +112,7 @@ function ghostMove(move) {
         if(fruitEat){
             ghostDie;
         }else{
-            gameOver;
+            gameOver = true;
         }
     }
     gameDisplay();
@@ -105,8 +120,10 @@ function ghostMove(move) {
 
 function ghostMovement() {
     let directions = [-1, 1];
-    let move = directions[getRandomInt(0, directions.length)];
-    setInterval(ghostMove, 2000);
+    intervalID = setInterval(() => {
+        let move = directions[getRandomInt(0, directions.length)];
+        ghostMove(move);
+    }, 2000);
 }
 
 function stopGhostMovement() {
@@ -129,6 +146,8 @@ function gameDisplay() {
     document.getElementById('score').textContent = `Score: ${score}`;
     if (gameOver) {
         document.getElementById('game').textContent += '\nGame Over!';
+        document.removeEventListener('keydown', handleKeyPress);
+        stopGhostMovement();
     }
 }
 
